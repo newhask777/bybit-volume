@@ -12,6 +12,7 @@ class ByVolume(Base):
     id = Column(Integer, primary_key=True, index=True)
     symbol = Column(String(255))
     volume = Column(Integer)
+    smvol = Column(Integer)
   
     # is_expired = Column(Boolean)
     

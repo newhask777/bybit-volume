@@ -1,6 +1,7 @@
 from pybit.unified_trading import WebSocket
 from time import sleep
 import json
+import itertools
 from db import models
 from db.conn import engine, SessionLocal, Base
 import requests
@@ -25,8 +26,8 @@ def handle_ticker(message):
         kline_info.symbol = message['topic']
         kline_info.volume = m['volume']
 
-        db.add(kline_info)
-        db.commit()
+        # db.add(kline_info)
+        # db.commit()
         
 
 
@@ -34,26 +35,48 @@ def handle_ticker(message):
 
     sum_vols = []
 
-    for vol in vols[-1:]:
+    for vol in vols[-5:]:
         # print(vol.as_dict())
         print(vol.volume)
 
-    #     sum_vols.append(vol.volume)
+        sum_vols.append(vol.volume)
+        sums = sum(sum_vols)/5
+
+    kline_info.smvol = sums
+
+    db.add(kline_info)
+    db.commit()
 
     # print(sum_vols)
     # print(sum(sum_vols)/5)
 
-    # del vols
+    vols_res = db.query(models.ByVolume).filter(models.ByVolume.smvol).all()
+
+    vls_list = []
+
+    for vls in vols_res[-2:]:
+        # print(vls.smvol)
+        vls_list.append(vls.smvol)
+
+    # print(vls_list)
 
 
-    # for vol in vols[-1:]:
-    #     # print(vol.as_dict())
-    #     print(vol.volume)
+    for a, b in itertools.combinations(vls_list, 2):
+        if(a < b):
+            print(a, b)
+    
 
+            text = 'TON GROWS'
+            print(text)
+        else:
+            text = 'TON DOWN'
+            print(text)
 
     res = requests.get(f'https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage', params=dict(
-        chat_id=TELEGRAM_CHANNEL, text='vols'
+        chat_id=TELEGRAM_CHANNEL, text=text
     ))
+
+    sleep(5)
 
     print('__________________________________new____________________________________')
 
@@ -88,7 +111,7 @@ def main():
     #     )
 
     while True:
-        sleep(1)
+        sleep(5)
 
 if __name__ == '__main__':
     print("Hola")

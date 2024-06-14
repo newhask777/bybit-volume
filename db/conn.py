@@ -32,7 +32,7 @@ POSTGRES
 MYSQL
 '''
 
-SQLALCHEMY_DATABASE_URL = 'mysql+pymysql://root:root@127.0.0.1:3306/bybit'
+SQLALCHEMY_DATABASE_URL = 'mysql+pymysql://root:@127.0.0.1:3306/bybit'
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL
