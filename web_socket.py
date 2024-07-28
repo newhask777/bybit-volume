@@ -6,90 +6,114 @@ from db import models
 from db.conn import engine, SessionLocal, Base
 import requests
 
-TELEGRAM_TOKEN = '6619773915:AAGZKwI6x4SUxrzChQQ2aAOV_csCXRaYDW4'
-TELEGRAM_CHANNEL = '5650732610'
+from sqlalchemy.sql import func
+
+import decimal
+from datetime import datetime, timedelta
+futuredate = datetime.now() + timedelta(days=10)
+import time
 
 
 models.Base.metadata.create_all(bind=engine)
 
-def handle_ticker(message):
-    # print(message['data'])
+token = '6619773915:AAGZKwI6x4SUxrzChQQ2aAOV_csCXRaYDW4'
+channel = '5650732610'
 
-    db = SessionLocal()
+def analize(db, token, channel):
+    volumes = db.query(func.avg(models.ByVolume.volume)).limit(5).scalar()
+    last_volume = db.query(models.ByVolume.volume).limit(1).scalar()
 
-    for m in message['data']:
-        # print(message['topic'])
-        # print(m['volume'])
+    print("___________________________________NEW___________________________________________")
 
-        kline_info = models.ByVolume()
+    print('Volume')
+    print(f"avg: {round(decimal.Decimal(volumes), 0)}")
+    print(f"last: {round(decimal.Decimal(last_volume), 0)}")
+    print(f"last: {last_volume}")
 
-        kline_info.symbol = message['topic']
-        kline_info.volume = m['volume']
+    if round(decimal.Decimal(last_volume), 0)/2 > round(decimal.Decimal(volumes), 0):
+        text = "VOLUME STRONG GROWS"
 
-        # db.add(kline_info)
-        # db.commit()
-        
+        print(text)
 
+        res = requests.get(f'https://api.telegram.org/bot{token}/sendMessage', params=dict(
+            chat_id=channel, text=text
+        ))
 
-    vols = db.query(models.ByVolume).all()
+    if round(decimal.Decimal(volumes), 0)/2 > round(decimal.Decimal(last_volume), 0):
+        text = "VOLUME STRONG DOWN"
 
-    sum_vols = []
+        print(text)
 
-    for vol in vols[-5:]:
-        # print(vol.as_dict())
-        print(vol.volume)
+        res = requests.get(f'https://api.telegram.org/bot{token}/sendMessage', params=dict(
+            chat_id=channel, text=text
+        ))
 
-        sum_vols.append(vol.volume)
-        sums = sum(sum_vols)/5
+    # PRICE
 
-    kline_info.smvol = sums
+    closes = db.query(func.avg(models.ByVolume.close)).limit(5).scalar()
+    last_close = db.query(models.ByVolume.close).limit(1).scalar()
 
-    db.add(kline_info)
-    db.commit()
+    print('Price')
+    print(f"avg: {closes}")
+    print(f"last: {last_close}")
 
-    # print(sum_vols)
-    # print(sum(sum_vols)/5)
+    if float(last_close)/2 > float(closes):
+        text = "PRICE STRONG GROWS"
 
-    vols_res = db.query(models.ByVolume).filter(models.ByVolume.smvol).all()
+        print(text)
 
-    vls_list = []
+        res = requests.get(f'https://api.telegram.org/bot{token}/sendMessage', params=dict(
+            chat_id=channel, text=text
+        ))
 
-    for vls in vols_res[-2:]:
-        # print(vls.smvol)
-        vls_list.append(vls.smvol)
+    if float(closes)/2 > float(last_close):
+        text = "PRICE STRONG DOWN"
 
-    # print(vls_list)
+        print(text)
 
+        res = requests.get(f'https://api.telegram.org/bot{token}/sendMessage', params=dict(
+            chat_id=channel, text=text
+        ))
 
-    for a, b in itertools.combinations(vls_list, 2):
-        if(a < b):
-            print(a, b)
-    
-
-            text = 'TON GROWS'
-            print(text)
-        else:
-            text = 'TON DOWN'
-            print(text)
-
-    res = requests.get(f'https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage', params=dict(
-        chat_id=TELEGRAM_CHANNEL, text=text
-    ))
-
-    sleep(5)
+    # db.close()
 
     print('__________________________________new____________________________________')
 
 
+def get_klines(message):
+    print(message['data'])
+
+    db = SessionLocal()
+
+    for m in message['data']:
+        kline_info = models.ByVolume()
+
+        kline_info.open = m['open']
+        kline_info.high = m['high']
+        kline_info.low = m['low']
+        kline_info.close = m['close']
+        kline_info.volume = m['volume']
+
+        db.add(kline_info)
+        db.commit()
+
+    # vls = db.query(models.ByVolume.id).count()
+    # # print(vls)
+    #
+    # if vls > 5:
+    #     print(vls)
+    #     analize(db, token, channel)
+    #     # if vls > 100:
+    #     #     db.query(models.ByVolume).delete()
+    # else:
+    #     print('no')
+
+
+    analize(db, token, channel)
+
+
 
 def main():
-
-    # print(symbols)
-
-    # with open('json/symbols.json', 'r', encoding='utf-8')  as f:
-    #     symbols = json.load(f)
-
-    # print(symbols)
 
     ws = WebSocket(
         testnet=False,
@@ -99,22 +123,14 @@ def main():
     ws.kline_stream(
             symbol='TONUSDT',
             interval=5,
-            callback=handle_ticker
+            callback=get_klines
         )
-
-    # for symbol in symbols:
-
-    #     ws.kline_stream(
-    #         symbol=symbol,
-    #         interval=5,
-    #         callback=handle_ticker
-    #     )
 
     while True:
         sleep(5)
 
 if __name__ == '__main__':
-    print("Hola")
+    print("START")
     main()
 
 

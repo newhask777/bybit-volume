@@ -1,21 +1,15 @@
-{
-    "topic": "kline.5.PENDLEUSDT",
-    "data": 
-    [
-        {
-            "start": 1717647300000, 
-            "end": 1717647599999, 
-            "interval": "5", 
-            "open": "6.2046", 
-            "close": "6.2018", 
-            "high": "6.2087", 
-            "low": "6.1972", 
-            "volume": "1721", 
-            "turnover": "10674.5984", 
-            "confirm": "False", 
-            "timestamp": 1717647538897
-        }
-    ], 
-    "ts": 1717647538897, 
-    "type": "snapshot"
-}
+[
+    {
+        "start": 1721322300000,
+        "end": 1721322359999,
+        "interval": "1",
+        "open": "7.225",
+        "close": "7.225",
+        "high": "7.2268",
+        "low": "7.225",
+        "volume": "187.4",
+        "turnover": "1354.10972",
+        "confirm": false,
+        "timestamp": 1721322312024
+    }
+]
